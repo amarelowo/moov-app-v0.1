@@ -2,6 +2,8 @@ const { app, BrowserWindow, ipcMain } = require('electron/main')
 const path = require('node:path')
 const { SerialPort } = require('serialport')
 const { ReadlineParser } = require('@serialport/parser-readline');
+const fs = require('fs')
+const storageFilePath = path.join(__dirname, 'storage.json')
 
 
 
@@ -34,14 +36,16 @@ app.on('window-all-closed', () => {
 })
 
 ipcMain.on('message', (event, message) => {
-  sendEndReceiveData(message)
-    .then(resposta => {
-      console.log(resposta)
-    })
-    .catch(erro => {
-      console.error('Erro:', erro);
-    });
+  console.log(readStorageFile())
+  // sendEndReceiveData(message)
+  //   .then(resposta => {
+  //     console.log(resposta)
+  //   })
+  //   .catch(erro => {
+  //     console.error('Erro:', erro);
+  //   });
 });
+
 
 async function sendEndReceiveData(dado) {
   const port = new SerialPort({ path: 'COM3', baudRate: 115200 }); // Ajuste o path conforme necessário
@@ -82,13 +86,45 @@ async function sendEndReceiveData(dado) {
 }
 
 
-
 // Função que envia dados do main para o renderer
-
 function sendToRenderer(data) {
   const windows = BrowserWindow.getAllWindows();
 
   if(windows.length > 0) {
     windows[0].webContents.send('fromMain', data);
   }
+}
+
+
+ipcMain.on('update-storage', (event, updatedProducts) => {
+  console.log('update-storage recebeu uma mensagem ', updatedProducts)
+  updateStorage(updatedProducts);
+})
+
+
+// Função que lê o arquivo storage.json
+
+function readStorageFile() {
+  if(!fs.existsSync(storageFilePath)) {
+    fs.writeFileSync(storageFilePath, JSON.stringify({}))
+  }
+
+  return JSON.parse(fs.readFileSync(storageFilePath), 'utf8')
+}
+
+// Função para atualizar a quantidade de um produto 
+
+function updateStorage(updatedStock) {
+  const data = readStorageFile();
+
+  Object.keys(updatedStock).forEach(id => {
+    const product = updatedStock[id]
+    if(data[id]) {
+      data[id].quantity = product.quantity
+    } else {
+      console.error('Produto não encontrado no storage: ', product)
+    }
+  })
+
+  fs.writeFileSync(storageFilePath, JSON.stringify(data, null, 2))
 }

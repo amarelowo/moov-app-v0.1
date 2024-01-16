@@ -3,7 +3,20 @@ import Image from 'next/image'
 import { useCallback, useEffect, useState } from 'react'
 
 
-function ProductCard({ productCard, handleCart }: ProductCardProps) {
+function ProductCard({ productCard, handleCart, quantityInCart }: ProductCardProps) {
+
+  const isMaxQuantityReached = quantityInCart >= productCard.stock;
+
+  const cardStyles = isMaxQuantityReached ? "inline-flex flex-col items-start gap-[10px] relative opacity-50" 
+                                          : "inline-flex flex-col items-start gap-[10px] relative";
+
+  
+  const handleClick = () => {
+    if (!isMaxQuantityReached) {
+      handleCart(productCard, true);
+    }
+  };
+
 
   function formatPrice(price: number){
     let priceStr = price.toFixed(2)
@@ -23,7 +36,7 @@ function ProductCard({ productCard, handleCart }: ProductCardProps) {
   const {reais, centavos, leftPositon} = formatPrice(productCard.price)
 
   return(
-    <div className="inline-flex flex-col items-start gap-[10px] relative" onClick={() => handleCart(productCard, true)}>
+    <div className={cardStyles} onClick={() => handleClick()}>
       <div className="relative w-[251px] h-[129px] bg-[#f2f2f2] rounded-[13px] border-2 border-solid border-black" />
       <div className="absolute w-[62px] h-[62px] top-[83px] left-[229px] bg-[#f2f2f2] rounded-[9px] border-2 border-solid border-black">
         <Image src='/assets/icon.png' alt='cart' width={500} height={500} className='p-[3px]'></Image>  
@@ -46,28 +59,42 @@ function ProductCard({ productCard, handleCart }: ProductCardProps) {
   )
 }
 
-function ProductCatalog({ products, handleCart }: ProductCatalogProps) {
+function ProductCatalog({ products, handleCart, cart }: ProductCatalogProps) {
 
   const rows: JSX.Element[] = [];
 
   products.forEach((product) => {
-    rows.push(<ProductCard productCard={product} key={product.id} handleCart={handleCart}/>);
+    const quantityInCart = cart.find(item => item.id === product.id)?.quantityInCart || 0;
+
+    rows.push(<ProductCard productCard={product} key={product.id} handleCart={handleCart} quantityInCart={quantityInCart}/>);
   });
+
+  
 
   return(
     <section className="grid grid-cols-2 gap-[40px] ml-[60px] mr-[78px] mt-[50px] mb-[100px]">{rows}</section>
   )
 }
 
+function CartTable( { productCart, handleCart  }: CartTableProps) {
 
-function CartTable( { productCart, handleCart }: CartTableProps) {
+  const isMaxQuantityReached = productCart.quantityInCart >= productCart.stock
+
+  const addButtonStyles = isMaxQuantityReached? 'opacity-30' : ''
+
+  const handleAdd= () => {
+    if(!isMaxQuantityReached) {
+      handleCart(productCart, true)
+    }
+  }
+
   return(
     <div className='grid grid-rows-1 grid-cols-3 justify-items-center items-center m-[5px] bg-slate-200 rounded-lg'>
       <div className='grid grid-rows-1 grid-cols-3 justify-items-center'>
         <div onClick={() => {handleCart(productCart, false)}}>
           <Image src='/assets/minus.png' alt='minus' width={25} height={25}></Image>
         </div> {productCart.quantityInCart} 
-        <div onClick={() => {handleCart(productCart, true)}}>
+        <div className={addButtonStyles} onClick={() => {handleAdd()}}>
         <Image src='/assets/plus.png' alt='plus' width={25} height={25}></Image>
         </div>
       </div>
@@ -136,6 +163,49 @@ function ShoppingCart( { productsCart, handleCart, clearCart }: ShoppingCartProp
     window.electron.sendData(request);
   }
 
+  const updateGlobalStock = useCallback(() => {
+    const updatedStock: UpdatedStock = {}
+ 
+
+    // Atualiza o estoque global baseado nos itens do carrinho.
+
+    productsCart.forEach(cartItem => {
+      
+
+      const productIndex = PRODUCTS.findIndex(p => p.id === cartItem.id)
+      if(productIndex !== -1) {
+        if(PRODUCTS[productIndex].stock >= cartItem.quantityInCart) {
+          PRODUCTS[productIndex].stock -= cartItem.quantityInCart
+          console.log(PRODUCTS[productIndex].stock)
+
+          updatedStock[cartItem.id] = {
+            id: cartItem.id,
+            quantity: PRODUCTS[productIndex].stock
+          }
+
+        } else {
+          console.error('Estoque insuficiente para o produto: ', cartItem.name);
+          throw new Error('Estoque insuficiente')
+        }
+      }
+    })
+
+    clearCart();
+
+    window.electron.updateStorage(updatedStock);
+  }, [productsCart, clearCart])
+
+  const handleConfirmOrder = useCallback(() => {
+    try {
+      updateGlobalStock();
+      sendStringRequests(productsCart);
+      console.log('aeiuaofufaoi')
+      console.log(PRODUCTS)
+    } catch (error) {
+      console.error(error)
+    }
+  }, [productsCart, sendStringRequests, updateGlobalStock])
+
   const rows: JSX.Element[] = [];
   let total: number = 0;
 
@@ -162,7 +232,7 @@ function ShoppingCart( { productsCart, handleCart, clearCart }: ShoppingCartProp
         </button>
         <button 
           className={`rounded-lg ${isCartEmpty ? 'bg-gray-100' : 'bg-green-500'} shadow-[inset_0px_4px_4px_#00000040,0px_4px_4px_#00000040]`}
-          onClick={() => {sendStringRequests(productsCart)}}
+          onClick={() => {handleConfirmOrder()}}
           disabled={isCartEmpty}>
           CONFIRMAR PEDIDO
         </button>
@@ -234,7 +304,7 @@ export default function Home() {
         <Image src="/assets/logo.png" alt="logo" width={150} height={150}></Image>
       </div>
       <div className='flex-grow overflow-auto scrollbar-hide'>
-        <ProductCatalog products={PRODUCTS} handleCart={handleCart}></ProductCatalog>
+        <ProductCatalog products={PRODUCTS} handleCart={handleCart} cart={cart}></ProductCatalog>
       </div>
       <div className='flex-shrink-0 h-300'>
         <ShoppingCart productsCart={cart} handleCart={handleCart} clearCart={clearCart}></ShoppingCart>
@@ -261,11 +331,13 @@ interface CartData extends ProductData {
 interface ProductCardProps {
   productCard: ProductData;
   handleCart: (product: ProductData, add: boolean) => void;
+  quantityInCart: number;
 }
 
 interface ProductCatalogProps {
   products: ProductData[];
   handleCart: (product: ProductData, add: boolean) => void;
+  cart: CartData[];
 }
 
 interface ProductData {

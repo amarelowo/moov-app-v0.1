@@ -19,7 +19,8 @@ window.addEventListener('DOMContentLoaded', () => {
       if (validChannels.includes(channel)) {
           ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
-  }
+    },
+    updateStorage: (updatedProducts) => ipcRenderer.send('update-storage', updatedProducts)
   });
 
   
