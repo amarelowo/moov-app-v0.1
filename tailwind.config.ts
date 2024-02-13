@@ -11,9 +11,21 @@ const config: Config = {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'transparente': '#FFFFFF00'
+          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))'
       },
+      colors: {
+        'blue-baby': '#22B1C5'
+      },
+      animation: {
+        'spin-slow': 'spin 3s linear infinite',
+        'spin-half': 'spinHalf 1s ease infinite'
+      },
+      keyframes: {
+        spinHalf: {
+          '0%': { transform: 'rotate(0deg)'},
+          '100%': {transform: 'rotate(180deg)'}
+        }
+      }
     },
   },
   plugins: [],

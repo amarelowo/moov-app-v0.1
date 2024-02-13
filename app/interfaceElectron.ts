@@ -10,11 +10,19 @@ declare global {
         [key: number]: UpdatedProduct
     }
 
+    type StockDataCallback = (stockData: any) => void
+
+
     interface Window {
         electron: {
             sendData: (data: string) => void
             receive: (channel: string, func: (...args: any[]) => void) => void
             updateStorage: (updatedProducts: UpdatedStock) => void
+            requestStock: () => void
+            onStockData: (func: StockDataCallback) => void
+            activityDetection: () => void
+            inactivityDetection: () => void
+            
         }
     }
 }

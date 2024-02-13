@@ -20,7 +20,13 @@ window.addEventListener('DOMContentLoaded', () => {
           ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
     },
-    updateStorage: (updatedProducts) => ipcRenderer.send('update-storage', updatedProducts)
+    updateStorage: (updatedProducts) => ipcRenderer.send('update-storage', updatedProducts),
+    requestStock: () => ipcRenderer.send('request-stock'),
+    onStockData: (func) => {
+      ipcRenderer.on('stock-data', (event, ...args) => func(...args))
+    },
+    activityDetection: () => ipcRenderer.send('activity-detected'),
+    inactivityDetection: () => ipcRenderer.send('inactivity-detected')
   });
 
   

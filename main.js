@@ -15,7 +15,7 @@ function createWindow () {
       preload: path.join(__dirname, 'preload.js')
     }
   })
-
+  win.setMenuBarVisibility(false)
   win.loadURL("http://localhost:3000")
 }
 
@@ -36,15 +36,45 @@ app.on('window-all-closed', () => {
 })
 
 ipcMain.on('message', (event, message) => {
-  console.log(readStorageFile())
-  // sendEndReceiveData(message)
-  //   .then(resposta => {
-  //     console.log(resposta)
-  //   })
-  //   .catch(erro => {
-  //     console.error('Erro:', erro);
-  //   });
+  // console.log(readStorageFile())
+  sendEndReceiveData(message)
+    .then(resposta => {
+      console.log(resposta)
+    })
+    .catch(erro => {
+      console.error('Erro:', erro);
+    });
 });
+
+ipcMain.on('activity-detected', () => {
+
+  const win = BrowserWindow.getFocusedWindow()
+
+  if(win) {
+    win.loadURL('http://localhost:3000')
+  }
+})
+
+ipcMain.on('inactivity-detected', () => {
+  const win = BrowserWindow.getFocusedWindow()
+
+  if(win) {
+    win.loadURL('http://localhost:3000/video')
+  }
+})
+
+ipcMain.on('update-storage', (event, updatedProducts) => {
+  console.log('update-storage recebeu uma mensagem ', updatedProducts)
+  updateStorage(updatedProducts);
+})
+
+ipcMain.on('request-stock', (event) => {
+  
+  const stockData = readStorageFile();
+
+  // console.log('Lido o storage.json ', stockData)
+  event.sender.send('stock-data',stockData)
+})
 
 
 async function sendEndReceiveData(dado) {
@@ -85,7 +115,6 @@ async function sendEndReceiveData(dado) {
   });
 }
 
-
 // Função que envia dados do main para o renderer
 function sendToRenderer(data) {
   const windows = BrowserWindow.getAllWindows();
@@ -94,13 +123,6 @@ function sendToRenderer(data) {
     windows[0].webContents.send('fromMain', data);
   }
 }
-
-
-ipcMain.on('update-storage', (event, updatedProducts) => {
-  console.log('update-storage recebeu uma mensagem ', updatedProducts)
-  updateStorage(updatedProducts);
-})
-
 
 // Função que lê o arquivo storage.json
 
