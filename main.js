@@ -1,9 +1,16 @@
 const { app, BrowserWindow, ipcMain } = require('electron/main')
 const path = require('node:path')
 const { SerialPort } = require('serialport')
-const { ReadlineParser } = require('@serialport/parser-readline');
+const { ReadlineParser } = require('@serialport/parser-readline')
 const fs = require('fs')
 const storageFilePath = path.join(__dirname, 'storage.json')
+const { exec } = require('child_process')
+
+const { killServerOnPort } = require('./serverManager')
+
+
+let nextServerProcess = null;
+let isServerShuttingDown = false;
 
 
 
@@ -16,10 +23,60 @@ function createWindow () {
     }
   })
   win.setMenuBarVisibility(false)
-  win.loadURL("http://localhost:3000")
+
+  const startURL = "http://localhost:3000"
+
+  win.loadURL(startURL).catch(() => {
+    console.log('Falha ao iniciar o URL, tentando novamente...')
+    setTimeout(() => win.loadURL(startURL), 5000);
+  })
+
+  win.on('did-fail-load', () => {
+    setTimeout(() => {
+      win.loadURL(startURL);
+    }, 5000);
+  })
+  
+}
+
+
+app.on('before-quit', (event) => {
+  // Se o servidor já estiver em processo de finalização, apenas retorne
+  if (isServerShuttingDown) {
+    return;
+  }
+
+  // Marque que o servidor está sendo finalizado para evitar múltiplas chamadas
+  isServerShuttingDown = true;
+
+  // Impede o fechamento imediato até que o servidor seja finalizado
+  event.preventDefault();
+
+  killServerOnPort(3000) // Substitua 3000 pela porta do seu servidor
+      .then(() => {
+          console.log('Servidor finalizado com sucesso.');
+          app.quit(); // Fecha o aplicativo após o servidor ser finalizado
+      })
+      .catch((err) => {
+          console.error('Falha ao finalizar o servidor:', err);
+          app.quit(); // Fecha o aplicativo mesmo se houver erro
+      });
+});
+
+function startNextServer() {
+  // Inicia o servidor Next.js e armazena a referência ao processo
+  nextServerProcess = exec('npm run dev', (err, stdout, stderr) => {
+    if (err) {
+      console.error(`Erro ao iniciar o servidor Next.js: ${err}`);
+      return;
+    }
+    console.log(`stdout: ${stdout}`);
+    console.error(`stderr: ${stderr}`);
+  });
 }
 
 app.whenReady().then(() => {
+  startNextServer()
   createWindow()
 
   app.on('activate', () => {
@@ -34,6 +91,8 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
+
+
 
 ipcMain.on('message', (event, message) => {
   // console.log(readStorageFile())
@@ -78,7 +137,7 @@ ipcMain.on('request-stock', (event) => {
 
 
 async function sendEndReceiveData(dado) {
-  const port = new SerialPort({ path: 'COM3', baudRate: 115200 }); // Ajuste o path conforme necessário
+  const port = new SerialPort({ path: 'COM5', baudRate: 115200 }); // Ajuste o path conforme necessário
   const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
 
   return new Promise((resolve, reject) => {
