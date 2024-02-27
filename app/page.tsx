@@ -201,7 +201,7 @@ function ShoppingCart( { productsCart, handleCart, clearCart }: ShoppingCartProp
     request = 'p;' + request;
     request = request.slice(0,-1);
 
-    window.electron.sendData(request);
+    // window.electron.sendData(request); tirarii jfijaiopfjsiojsodijaoisjfodsifjsoifjsdofij
   }
 
   const updateGlobalStock = useCallback(() => {
@@ -247,6 +247,14 @@ function ShoppingCart( { productsCart, handleCart, clearCart }: ShoppingCartProp
     setShowLoadingModal(true)
     updateGlobalStock()
     sendStringRequests(productsCart);
+
+     // Definindo o delay
+     setTimeout(() => {
+      setShowLoadingModal(false)
+      setShowTFinalModal(true)
+
+
+    }, 2000); // 2000 milissegundos = 2 segundos
     
   }, [productsCart, sendStringRequests, updateGlobalStock])
 

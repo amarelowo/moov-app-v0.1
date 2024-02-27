@@ -96,13 +96,13 @@ app.on('window-all-closed', () => {
 
 ipcMain.on('message', (event, message) => {
   // console.log(readStorageFile())
-  sendEndReceiveData(message)
-    .then(resposta => {
-      console.log(resposta)
-    })
-    .catch(erro => {
-      console.error('Erro:', erro);
-    });
+  // sendEndReceiveData(message)
+  //   .then(resposta => {
+  //     console.log(resposta)
+  //   })
+  //   .catch(erro => {
+  //     console.error('Erro:', erro);
+  //   });
 });
 
 ipcMain.on('activity-detected', () => {
