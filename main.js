@@ -76,7 +76,7 @@ function startNextServer() {
 }
 
 app.whenReady().then(() => {
-  startNextServer()
+  // startNextServer()
   createWindow()
 
   app.on('activate', () => {
@@ -95,14 +95,14 @@ app.on('window-all-closed', () => {
 
 
 ipcMain.on('message', (event, message) => {
-  // console.log(readStorageFile())
-  // sendEndReceiveData(message)
-  //   .then(resposta => {
-  //     console.log(resposta)
-  //   })
-  //   .catch(erro => {
-  //     console.error('Erro:', erro);
-  //   });
+  console.log(readStorageFile())
+  sendEndReceiveData(message)
+    .then(resposta => {
+      console.log(resposta)
+    })
+    .catch(erro => {
+      console.error('Erro:', erro);
+    });
 });
 
 ipcMain.on('activity-detected', () => {
@@ -137,7 +137,7 @@ ipcMain.on('request-stock', (event) => {
 
 
 async function sendEndReceiveData(dado) {
-  const port = new SerialPort({ path: 'COM5', baudRate: 115200 }); // Ajuste o path conforme necessário
+  const port = new SerialPort({ path: 'COM3', baudRate: 115200 }); // Ajuste o path conforme necessário
   const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
 
   return new Promise((resolve, reject) => {

@@ -1,5 +1,4 @@
 "use client"
-import { handleWebpackExternalForEdgeRuntime } from 'next/dist/build/webpack/plugins/middleware-plugin';
 import Image from 'next/image'
 import { use, useCallback, useEffect, useState } from 'react'
 
@@ -201,7 +200,7 @@ function ShoppingCart( { productsCart, handleCart, clearCart }: ShoppingCartProp
     request = 'p;' + request;
     request = request.slice(0,-1);
 
-    // window.electron.sendData(request); tirarii jfijaiopfjsiojsodijaoisjfodsifjsoifjsdofij
+    window.electron.sendData(request); // tirarii jfijaiopfjsiojsodijaoisjfodsifjsoifjsdofij
   }
 
   const updateGlobalStock = useCallback(() => {
@@ -248,13 +247,13 @@ function ShoppingCart( { productsCart, handleCart, clearCart }: ShoppingCartProp
     updateGlobalStock()
     sendStringRequests(productsCart);
 
-     // Definindo o delay
-     setTimeout(() => {
-      setShowLoadingModal(false)
-      setShowTFinalModal(true)
+    // Definindo o delay
+    //  setTimeout(() => {
+    //   setShowLoadingModal(false)
+    //   setShowTFinalModal(true)
 
 
-    }, 2000); // 2000 milissegundos = 2 segundos
+    // }, 2000); // 2000 milissegundos = 2 segundos
     
   }, [productsCart, sendStringRequests, updateGlobalStock])
 
